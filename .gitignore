@@ -1,4 +1,5 @@
 node_modules
+.vercel
 .env
 env.prod
 .env.local
@@ -9,3 +10,4 @@ env.prod
 
 # cookies
 cookies.txt
+.vercel
