@@ -1,5 +1,4 @@
-import { handleStudioRequest } from "../core/handler.js";
-import type { StudioConfig, UniversalRequest, UniversalResponse } from "../types/handler.js";
+import type { StudioConfig } from "../types/handler.js";
 import { injectStudioConfig } from "../utils/html-injector.js";
 
 export type CloudflareAssetsBinding = {
@@ -13,18 +12,36 @@ export type CloudflareStudioOptions = {
 export function createCloudflareStudioHandler(config: StudioConfig, options: CloudflareStudioOptions) {
   return async (request: Request): Promise<Response> => {
     const path = normalizePath(new URL(request.url), config.basePath);
-    const wantsJson = (request.headers.get("accept") || "").includes("application/json");
 
-    if (path.startsWith("/api/") || wantsJson) {
-      const universalRes = await handleStudioRequest(await convertRequest(request), config);
-      return toResponse(universalRes);
+    if (path === "/api/service-credentials" || path.startsWith("/api/service-credentials/")) {
+      return handleServiceCredentialsRequest(request, path, config);
+    }
+
+    if (path === "/api/config") {
+      return jsonResponse(200, {
+        studio: { version: "1.1.3-anmho.0" },
+        serviceCredentials: { enabled: config.serviceCredentials?.enabled !== false },
+      });
+    }
+
+    if (path.startsWith("/api/")) {
+      return jsonResponse(404, { error: "not_found" });
     }
 
     return serveAsset(request, path, config, options.assets);
   };
 }
 
-async function convertRequest(request: Request): Promise<UniversalRequest> {
+async function handleServiceCredentialsRequest(
+  request: Request,
+  pathWithQuery: string,
+  config: StudioConfig,
+): Promise<Response> {
+  const serviceCredentials = config.serviceCredentials;
+  if (!serviceCredentials || serviceCredentials.enabled === false) {
+    return jsonResponse(404, { error: "service_credentials_not_enabled" });
+  }
+
   let body: any;
   if (request.method !== "GET" && request.method !== "HEAD") {
     const contentType = request.headers.get("content-type") || "";
@@ -40,21 +57,25 @@ async function convertRequest(request: Request): Promise<UniversalRequest> {
     headers[key] = value;
   });
 
-  const url = new URL(request.url);
-  return {
-    url: url.pathname + url.search,
+  const [pathWithoutQuery, queryString] = pathWithQuery.split("?");
+  const strippedPath = pathWithoutQuery.slice("/api/service-credentials".length) || "/";
+  const proxyResponse = await serviceCredentials.request({
+    path: strippedPath + (queryString ? `?${queryString}` : ""),
     method: request.method,
     headers,
     body,
-  };
+  });
+
+  return jsonResponse(proxyResponse.status, proxyResponse.body ?? null, proxyResponse.headers);
 }
 
-function toResponse(universal: UniversalResponse): Response {
-  const headers = new Headers(universal.headers);
-  universal.setCookies?.forEach((cookie) => headers.append("Set-Cookie", cookie));
-  return new Response(universal.body as any, {
-    status: universal.status,
-    headers,
+function jsonResponse(status: number, body: any, headers: Record<string, string> = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
   });
 }
 

@@ -1,17 +1,27 @@
-import { handleStudioRequest } from "../core/handler.js";
 import { injectStudioConfig } from "../utils/html-injector.js";
 export function createCloudflareStudioHandler(config, options) {
     return async (request) => {
         const path = normalizePath(new URL(request.url), config.basePath);
-        const wantsJson = (request.headers.get("accept") || "").includes("application/json");
-        if (path.startsWith("/api/") || wantsJson) {
-            const universalRes = await handleStudioRequest(await convertRequest(request), config);
-            return toResponse(universalRes);
+        if (path === "/api/service-credentials" || path.startsWith("/api/service-credentials/")) {
+            return handleServiceCredentialsRequest(request, path, config);
+        }
+        if (path === "/api/config") {
+            return jsonResponse(200, {
+                studio: { version: "1.1.3-anmho.0" },
+                serviceCredentials: { enabled: config.serviceCredentials?.enabled !== false },
+            });
+        }
+        if (path.startsWith("/api/")) {
+            return jsonResponse(404, { error: "not_found" });
         }
         return serveAsset(request, path, config, options.assets);
     };
 }
-async function convertRequest(request) {
+async function handleServiceCredentialsRequest(request, pathWithQuery, config) {
+    const serviceCredentials = config.serviceCredentials;
+    if (!serviceCredentials || serviceCredentials.enabled === false) {
+        return jsonResponse(404, { error: "service_credentials_not_enabled" });
+    }
     let body;
     if (request.method !== "GET" && request.method !== "HEAD") {
         const contentType = request.headers.get("content-type") || "";
@@ -26,20 +36,23 @@ async function convertRequest(request) {
     request.headers.forEach((value, key) => {
         headers[key] = value;
     });
-    const url = new URL(request.url);
-    return {
-        url: url.pathname + url.search,
+    const [pathWithoutQuery, queryString] = pathWithQuery.split("?");
+    const strippedPath = pathWithoutQuery.slice("/api/service-credentials".length) || "/";
+    const proxyResponse = await serviceCredentials.request({
+        path: strippedPath + (queryString ? `?${queryString}` : ""),
         method: request.method,
         headers,
         body,
-    };
+    });
+    return jsonResponse(proxyResponse.status, proxyResponse.body ?? null, proxyResponse.headers);
 }
-function toResponse(universal) {
-    const headers = new Headers(universal.headers);
-    universal.setCookies?.forEach((cookie) => headers.append("Set-Cookie", cookie));
-    return new Response(universal.body, {
-        status: universal.status,
-        headers,
+function jsonResponse(status, body, headers = {}) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: {
+            "Content-Type": "application/json",
+            ...headers,
+        },
     });
 }
 function normalizePath(url, basePath) {
