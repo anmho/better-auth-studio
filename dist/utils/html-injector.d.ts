@@ -12,6 +12,7 @@ export interface StudioMetadata {
 }
 export interface StudioConfig {
     basePath?: string;
+    authMode?: "studio" | "access";
     metadata?: StudioMetadata;
     auth?: any;
     access?: StudioAccessConfig;
@@ -49,6 +50,7 @@ export interface LastSeenAtConfig {
 }
 export interface WindowStudioConfig {
     basePath: string;
+    authMode?: "studio" | "access";
     metadata: Required<StudioMetadata>;
     liveMarquee?: LiveMarqueeConfig;
     lastSeenAt?: LastSeenAtConfig;
@@ -56,5 +58,9 @@ export interface WindowStudioConfig {
     tools?: {
         exclude?: string[];
     };
+    serviceCredentials?: {
+        enabled: boolean;
+    };
 }
 export declare function serveIndexHtml(publicDir: string, config?: Partial<StudioConfig>): string;
+export declare function injectStudioConfig(html: string, config?: Partial<StudioConfig>): string;

@@ -3,6 +3,7 @@ import {
   Building2,
   Database,
   LayoutDashboard,
+  KeyRound,
   LogOut,
   Mail,
   Menu,
@@ -44,7 +45,7 @@ function getStudioConfig() {
 
 function checkIsSelfHosted(): boolean {
   const cfg = getStudioConfig();
-  return !!cfg.basePath;
+  return !!cfg.basePath && cfg.authMode !== "access";
 }
 
 interface LayoutProps {
@@ -450,6 +451,15 @@ export default function Layout({ children }: LayoutProps) {
       icon: Wrench,
       badge: formatCount(getVisibleToolsCount(getStudioConfig())),
     },
+    ...(getStudioConfig()?.serviceCredentials?.enabled
+      ? [
+          {
+            name: "Service Credentials",
+            href: "/service-credentials",
+            icon: KeyRound,
+          },
+        ]
+      : []),
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 

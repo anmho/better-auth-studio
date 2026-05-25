@@ -3,6 +3,9 @@ import { join } from "node:path";
 export function serveIndexHtml(publicDir, config = {}) {
     const indexPath = join(publicDir, "index.html");
     let html = readFileSync(indexPath, "utf-8");
+    return injectStudioConfig(html, config);
+}
+export function injectStudioConfig(html, config = {}) {
     const frontendConfig = prepareFrontendConfig(config);
     html = injectConfig(html, frontendConfig);
     return html;
@@ -44,8 +47,10 @@ function prepareFrontendConfig(config) {
         : undefined;
     const lastSeenAt = config.lastSeenAt;
     const toolsConfig = config.tools;
+    const serviceCredentialsConfig = config.serviceCredentials;
     return {
         basePath: config.basePath || "",
+        authMode: config.authMode,
         metadata: mergedMetadata,
         liveMarquee: liveMarquee,
         lastSeenAt: lastSeenAt && typeof lastSeenAt === "object"
@@ -53,6 +58,9 @@ function prepareFrontendConfig(config) {
             : undefined,
         tools: toolsConfig && Array.isArray(toolsConfig.exclude) && toolsConfig.exclude.length > 0
             ? { exclude: toolsConfig.exclude }
+            : undefined,
+        serviceCredentials: serviceCredentialsConfig
+            ? { enabled: serviceCredentialsConfig.enabled !== false }
             : undefined,
     };
 }

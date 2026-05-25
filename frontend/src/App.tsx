@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import OrganizationDetails from "./pages/OrganizationDetails";
 import Organizations from "./pages/Organizations";
 import Sessions from "./pages/Sessions";
+import ServiceCredentials from "./pages/ServiceCredentials";
 import Settings from "./pages/Settings";
 import TeamDetails from "./pages/TeamDetails";
 import Teams from "./pages/Teams";
@@ -26,6 +27,7 @@ import Users from "./pages/Users";
 const config = (window as any).__STUDIO_CONFIG__;
 const basePath = config?.basePath !== undefined ? config.basePath : "";
 const isSelfHosted = !!basePath;
+const usesStudioAuth = config?.authMode !== "access";
 
 interface AuthState {
   loading: boolean;
@@ -91,6 +93,7 @@ function MainRoutes() {
           <Route path="/database/demo" element={<DatabaseSchemaNodeDemo />} />
           <Route path="/emails" element={<EmailEditor />} />
           <Route path="/tools" element={<Tools />} />
+          <Route path="/service-credentials" element={<ServiceCredentials />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
@@ -110,7 +113,7 @@ function AppShell() {
 
   return (
     <Router basename={basePath}>
-      {isSelfHosted ? (
+      {isSelfHosted && usesStudioAuth ? (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/access-denied" element={<AccessDenied />} />
