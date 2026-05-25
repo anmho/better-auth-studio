@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { handleStudioApiRequest } from "../src/routes";
+import { buildTargetUrl, getInternalPath } from "../src/vercel/service-credentials-proxy";
 
 describe("service credentials routes", () => {
   it("proxies service credential requests through the configured handler", async () => {
@@ -64,5 +65,29 @@ describe("service credentials routes", () => {
 
     expect(response.status).toBe(404);
     expect(response.data.error).toBe("service_credentials_not_enabled");
+  });
+
+  it("reconstructs Vercel routed service credential paths", () => {
+    expect(
+      getInternalPath(
+        "/api/service-credentials?service_credentials_path=resource-servers&include_disabled=true",
+      ),
+    ).toBe("/resource-servers?include_disabled=true");
+    expect(
+      getInternalPath(
+        "/api/service-credentials?service_credentials_path=oauth2/clients/client-id/rotate",
+      ),
+    ).toBe("/oauth2/clients/client-id/rotate");
+  });
+
+  it("preserves the internal base path when building authctl target URLs", () => {
+    expect(
+      String(
+        buildTargetUrl(
+          "https://auth.anmho.com/internal",
+          "/resource-servers?include_disabled=true",
+        ),
+      ),
+    ).toBe("https://auth.anmho.com/internal/resource-servers?include_disabled=true");
   });
 });

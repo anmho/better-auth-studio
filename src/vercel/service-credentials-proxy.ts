@@ -30,7 +30,7 @@ export async function handleServiceCredentialsProxy(req: VercelRequest, res: Ver
     return;
   }
 
-  const targetUrl = new URL(getInternalPath(req.url || "/api/service-credentials"), baseUrl);
+  const targetUrl = buildTargetUrl(baseUrl, getInternalPath(req.url || "/api/service-credentials"));
   const method = req.method || "GET";
   const headers: Record<string, string> = {
     Accept: jsonContentType,
@@ -61,11 +61,24 @@ function getHeader(req: VercelRequest, name: string): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function getInternalPath(url: string): string {
+export function getInternalPath(url: string): string {
   const parsed = new URL(url, "https://auth-studio.local");
   const prefix = "/api/service-credentials";
-  const path = parsed.pathname.startsWith(prefix) ? parsed.pathname.slice(prefix.length) || "/" : "/";
+  const routedPath = parsed.searchParams.get("service_credentials_path");
+  parsed.searchParams.delete("service_credentials_path");
+  const path =
+    routedPath !== null
+      ? `/${routedPath}`.replace(/\/+/g, "/")
+      : parsed.pathname.startsWith(prefix)
+        ? parsed.pathname.slice(prefix.length) || "/"
+        : "/";
   return `${path}${parsed.search}`;
+}
+
+export function buildTargetUrl(baseUrl: string, internalPath: string): URL {
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const path = internalPath.replace(/^\/+/, "");
+  return new URL(path, base);
 }
 
 function serializeBody(
