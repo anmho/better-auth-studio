@@ -77,6 +77,7 @@ export interface WindowStudioConfig {
   basePath: string;
   authMode?: "studio" | "access";
   metadata: Required<StudioMetadata>;
+  features?: Partial<Record<string, boolean>>;
   liveMarquee?: LiveMarqueeConfig;
   lastSeenAt?: LastSeenAtConfig;
   /** Tool ids to exclude from the Tools page (from self-host config). */
@@ -142,11 +143,14 @@ function prepareFrontendConfig(config: Partial<StudioConfig>): WindowStudioConfi
   const lastSeenAt = (config as any).lastSeenAt;
   const toolsConfig = (config as any).tools;
   const serviceCredentialsConfig = (config as any).serviceCredentials;
+  const featuresConfig = (config as any).features;
 
   return {
     basePath: config.basePath || "",
     authMode: config.authMode,
     metadata: mergedMetadata,
+    features:
+      featuresConfig && typeof featuresConfig === "object" ? { ...featuresConfig } : undefined,
     liveMarquee: liveMarquee,
     lastSeenAt:
       lastSeenAt && typeof lastSeenAt === "object"

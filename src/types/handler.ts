@@ -170,6 +170,7 @@ export type StudioConfig = {
   authMode?: StudioAuthMode;
   access?: StudioAccessConfig;
   metadata?: StudioMetadata;
+  features?: Partial<Record<string, boolean>>;
   lastSeenAt?: StudioLastSeenAtConfig;
   /** Optional IP geolocation config (ipinfo.io or ipapi.co). When set, used for Events/Sessions location. */
   ipAddress?: StudioIpAddressConfig;
@@ -221,6 +222,7 @@ export type WindowStudioConfig = {
   basePath: string;
   authMode?: StudioAuthMode;
   metadata: Required<StudioMetadata>;
+  features?: Partial<Record<string, boolean>>;
   liveMarquee?: LiveMarqueeConfig;
   /** Tool ids to exclude from the Tools page (from self-host config). */
   tools?: { exclude?: StudioToolId[] };

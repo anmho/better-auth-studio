@@ -19,6 +19,19 @@ const configured = injectStudioConfig(html, {
     enabled: true,
     request: async () => ({ status: 501 }),
   },
+  features: {
+    dashboard: false,
+    users: false,
+    organizations: false,
+    teams: false,
+    sessions: false,
+    events: false,
+    database: false,
+    emails: false,
+    tools: false,
+    settings: false,
+    serviceCredentials: true,
+  },
 });
 
 await writeFile(indexPath, configured);
