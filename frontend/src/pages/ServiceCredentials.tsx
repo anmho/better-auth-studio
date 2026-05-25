@@ -11,9 +11,20 @@ import {
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { Textarea } from "../components/ui/textarea";
+import { cn } from "../lib/utils";
 import { apiFetch } from "../utils/api";
 
 type Stage = "prod" | "staging" | "dev";
@@ -195,7 +206,11 @@ export default function ServiceCredentials() {
 
   const createClient = async () => {
     const scopes = parseClientScopes(clientForm.scopes);
-    if (!clientForm.client_app_id || !clientForm.client_identity || !clientForm.resource_server_id) {
+    if (
+      !clientForm.client_app_id ||
+      !clientForm.client_identity ||
+      !clientForm.resource_server_id
+    ) {
       toast.error("Client app, identity, and resource server are required");
       return;
     }
@@ -297,14 +312,14 @@ export default function ServiceCredentials() {
         </div>
 
         {secretResult && (
-          <div className="border border-emerald-400/35 bg-emerald-500/5 p-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <div className="flex items-center gap-2 font-mono text-xs uppercase text-emerald-200">
+          <Card className="rounded-none border-emerald-400/35 bg-emerald-500/5">
+            <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-2">
+                <CardTitle className="flex items-center gap-2 font-mono text-xs font-light uppercase text-emerald-200">
                   <ShieldCheck className="h-4 w-4" />
                   Secret available once
-                </div>
-                <p className="mt-2 font-mono text-xs leading-5 text-white/50">
+                </CardTitle>
+                <p className="font-mono text-xs leading-5 text-white/50">
                   Store it now. It will not be returned again.
                 </p>
               </div>
@@ -316,22 +331,29 @@ export default function ServiceCredentials() {
               >
                 Dismiss
               </Button>
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <SecretField label="Client ID" value={secretResult.client_id} />
-              <SecretField label="Client Secret" value={secretResult.client_secret} />
-            </div>
-            {vaultCommand && (
-              <button
-                type="button"
-                onClick={() => copyToClipboard(vaultCommand, "Vault command")}
-                className="mt-3 w-full border border-dashed border-white/20 bg-black p-3 text-left font-mono text-xs text-white/70 hover:border-white/50 hover:text-white"
-              >
-                <span className="mb-2 block uppercase text-white/40">Recommended Vault command</span>
-                <span className="break-all">{vaultCommand}</span>
-              </button>
-            )}
-          </div>
+            </CardHeader>
+            <CardContent className="space-y-3 p-4 pt-0">
+              <div className="grid gap-3 md:grid-cols-2">
+                <SecretField label="Client ID" value={secretResult.client_id} />
+                <SecretField label="Client Secret" value={secretResult.client_secret} />
+              </div>
+              {vaultCommand && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => copyToClipboard(vaultCommand, "Vault command")}
+                  className="h-auto w-full justify-start rounded-none border-dashed bg-black p-3 text-left font-mono text-xs text-white/70 hover:border-white/50 hover:text-white"
+                >
+                  <span className="block min-w-0">
+                    <span className="mb-2 block uppercase text-white/40">
+                      Recommended Vault command
+                    </span>
+                    <span className="block break-all">{vaultCommand}</span>
+                  </span>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         <div className="flex border border-dashed border-white/15">
@@ -386,12 +408,12 @@ export default function ServiceCredentials() {
                 />
               </Field>
               <Field label="Scopes">
-                <textarea
+                <Textarea
                   value={resourceForm.scopes}
                   onChange={(event) =>
                     setResourceForm((prev) => ({ ...prev, scopes: event.target.value }))
                   }
-                  className="min-h-28 w-full rounded-none border border-dashed border-white/20 bg-black px-3 py-2 font-mono text-sm text-white outline-none focus:border-white"
+                  className="min-h-28 bg-black font-mono"
                 />
               </Field>
               <Button
@@ -400,7 +422,11 @@ export default function ServiceCredentials() {
                 disabled={savingResource}
                 className="w-full gap-2 rounded-none font-mono uppercase"
               >
-                {savingResource ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {savingResource ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 Save Resource Server
               </Button>
             </FormPanel>
@@ -484,7 +510,11 @@ export default function ServiceCredentials() {
                 disabled={savingClient}
                 className="w-full gap-2 rounded-none font-mono uppercase"
               >
-                {savingClient ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {savingClient ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 Create Client
               </Button>
             </FormPanel>
@@ -498,17 +528,20 @@ export default function ServiceCredentials() {
 
 function SecretField({ label, value }: { label: string; value: string }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={() => copyToClipboard(value, label)}
-      className="border border-dashed border-white/20 bg-black p-3 text-left hover:border-white/50"
+      className="h-auto justify-start rounded-none border-dashed bg-black p-3 text-left hover:border-white/50"
     >
-      <span className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase text-white/40">
-        {label}
-        <Copy className="h-3.5 w-3.5" />
+      <span className="block min-w-0 flex-1">
+        <span className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase text-white/40">
+          {label}
+          <Copy className="h-3.5 w-3.5" />
+        </span>
+        <span className="block truncate font-mono text-xs text-white/80">{value}</span>
       </span>
-      <span className="block truncate font-mono text-xs text-white/80">{value}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -524,25 +557,33 @@ function TabButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant={active ? "default" : "ghost"}
       onClick={onClick}
-      className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 font-mono text-xs uppercase ${
-        active ? "bg-white text-black" : "text-white/55 hover:bg-white/5 hover:text-white"
-      }`}
+      className={cn(
+        "h-12 flex-1 rounded-none font-mono text-xs uppercase shadow-none",
+        active
+          ? "bg-white text-black hover:bg-white/90"
+          : "text-white/55 hover:bg-white/5 hover:text-white",
+      )}
     >
       {icon}
       {children}
-    </button>
+    </Button>
   );
 }
 
 function FormPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="border border-dashed border-white/15 bg-black p-4">
-      <h3 className="mb-4 font-mono text-xs uppercase text-white/70">{title}</h3>
-      <div className="space-y-4">{children}</div>
-    </div>
+    <Card className="h-fit rounded-none border-white/15 bg-black">
+      <CardHeader className="p-4 pb-0">
+        <CardTitle className="font-mono text-xs font-light uppercase text-white/70">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">{children}</CardContent>
+    </Card>
   );
 }
 
@@ -558,17 +599,18 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function StageField({ value, onChange }: { value: Stage; onChange: (stage: Stage) => void }) {
   return (
     <Field label="Stage">
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as Stage)}
-        className="h-10 w-full rounded-none border border-dashed border-white/20 bg-black px-3 font-mono text-sm text-white outline-none focus:border-white"
-      >
-        {stages.map((stage) => (
-          <option key={stage} value={stage}>
-            {stage}
-          </option>
-        ))}
-      </select>
+      <Select value={value} onValueChange={(stage) => onChange(stage as Stage)}>
+        <SelectTrigger className="border-dashed border-white/20 bg-black font-mono text-white">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="border-dashed border-white/20 bg-black font-mono uppercase text-[11px]">
+          {stages.map((stage) => (
+            <SelectItem key={stage} value={stage}>
+              {stage}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </Field>
   );
 }
@@ -583,66 +625,87 @@ function ResourceServersTable({
   onDisable: (server: ResourceServer) => void;
 }) {
   return (
-    <div className="overflow-hidden border border-dashed border-white/15">
-      <table className="w-full min-w-[760px] text-left">
-        <thead className="border-b border-dashed border-white/15 bg-white/[0.03]">
-          <tr className="font-mono text-[10px] uppercase text-white/45">
-            <th className="px-3 py-3 font-normal">Resource Server</th>
-            <th className="px-3 py-3 font-normal">Audience</th>
-            <th className="px-3 py-3 font-normal">Scopes</th>
-            <th className="px-3 py-3 font-normal">Status</th>
-            <th className="px-3 py-3 font-normal">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-dashed divide-white/10">
-          {resourceServers.map((server) => (
-            <tr key={`${server.resource_server_id}:${server.stage}`} className="font-mono text-xs">
-              <td className="px-3 py-3 text-white">
-                {server.resource_server_id}
-                <span className="ml-2 text-white/35">[{server.stage}]</span>
-              </td>
-              <td className="px-3 py-3 text-white/60">{server.audience}</td>
-              <td className="px-3 py-3 text-white/60">
-                {server.scopes.map((scope) => scope.name).join(", ")}
-              </td>
-              <td className="px-3 py-3">
-                <span className={server.disabled ? "text-red-300" : "text-emerald-300"}>
-                  {server.disabled ? "Disabled" : "Active"}
-                </span>
-              </td>
-              <td className="px-3 py-3">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onEdit(server)}
-                    className="h-8 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onDisable(server)}
-                    disabled={server.disabled}
-                    className="h-8 gap-1 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
-                  >
-                    <Ban className="h-3 w-3" />
-                    Disable
-                  </Button>
-                </div>
-              </td>
+    <div className="overflow-hidden rounded-none border border-dashed border-white/20 bg-black/30">
+      <div className="overflow-x-auto overflow-y-hidden">
+        <table className="w-full min-w-[760px] text-left">
+          <thead>
+            <tr className="border-b border-dashed border-white/10">
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Resource Server
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Audience
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Scopes
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Status
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Actions
+              </th>
             </tr>
-          ))}
-          {resourceServers.length === 0 && (
-            <tr>
-              <td colSpan={5} className="px-3 py-10 text-center font-mono text-xs uppercase text-white/35">
-                No resource servers
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {resourceServers.map((server) => (
+              <tr
+                key={`${server.resource_server_id}:${server.stage}`}
+                className="border-b border-dashed border-white/5 font-mono text-xs transition-colors hover:bg-white/5"
+              >
+                <td className="px-3 py-3 text-white">
+                  {server.resource_server_id}
+                  <span className="ml-2 text-white/35">[{server.stage}]</span>
+                </td>
+                <td className="px-3 py-3 text-white/60">{server.audience}</td>
+                <td className="px-3 py-3 text-white/60">
+                  {server.scopes.map((scope) => scope.name).join(", ")}
+                </td>
+                <td className="px-3 py-3">
+                  <Badge
+                    variant={server.disabled ? "error" : "success"}
+                    className="rounded-none border border-dashed font-mono text-[10px] font-light uppercase"
+                  >
+                    {server.disabled ? "Disabled" : "Active"}
+                  </Badge>
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onEdit(server)}
+                      className="h-8 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onDisable(server)}
+                      disabled={server.disabled}
+                      className="h-8 gap-1 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
+                    >
+                      <Ban className="h-3 w-3" />
+                      Disable
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {resourceServers.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-3 py-10 text-center font-mono text-xs uppercase text-white/35"
+                >
+                  No resource servers
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -657,71 +720,96 @@ function ClientsTable({
   onRevoke: (client: OAuthClient) => void;
 }) {
   return (
-    <div className="overflow-hidden border border-dashed border-white/15">
-      <table className="w-full min-w-[900px] text-left">
-        <thead className="border-b border-dashed border-white/15 bg-white/[0.03]">
-          <tr className="font-mono text-[10px] uppercase text-white/45">
-            <th className="px-3 py-3 font-normal">Client</th>
-            <th className="px-3 py-3 font-normal">Resource</th>
-            <th className="px-3 py-3 font-normal">Scopes</th>
-            <th className="px-3 py-3 font-normal">Vault Path</th>
-            <th className="px-3 py-3 font-normal">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-dashed divide-white/10">
-          {clients.map((client) => (
-            <tr key={client.client_id} className="font-mono text-xs">
-              <td className="px-3 py-3 text-white">
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(client.client_id, "Client ID")}
-                  className="inline-flex max-w-64 items-center gap-2 truncate hover:text-white/70"
+    <div className="overflow-hidden rounded-none border border-dashed border-white/20 bg-black/30">
+      <div className="overflow-x-auto overflow-y-hidden">
+        <table className="w-full min-w-[900px] text-left">
+          <thead>
+            <tr className="border-b border-dashed border-white/10">
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Client
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Resource
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Scopes
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Vault Path
+              </th>
+              <th className="px-3 py-3 font-mono text-xs font-normal uppercase text-white">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {clients.map((client) => (
+              <tr
+                key={client.client_id}
+                className="border-b border-dashed border-white/5 font-mono text-xs transition-colors hover:bg-white/5"
+              >
+                <td className="px-3 py-3 text-white">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(client.client_id, "Client ID")}
+                    className="inline-flex max-w-64 items-center gap-2 truncate hover:text-white/70"
+                  >
+                    <span className="truncate">{client.client_id}</span>
+                    <Copy className="h-3 w-3 shrink-0" />
+                  </button>
+                  {client.revoked && (
+                    <Badge
+                      variant="error"
+                      className="ml-2 rounded-none border border-dashed font-mono text-[10px] font-light uppercase"
+                    >
+                      Revoked
+                    </Badge>
+                  )}
+                </td>
+                <td className="px-3 py-3 text-white/60">
+                  {client.resource_server_id}
+                  <span className="ml-2 text-white/35">[{client.stage}]</span>
+                </td>
+                <td className="px-3 py-3 text-white/60">{client.scopes.join(", ")}</td>
+                <td className="px-3 py-3 text-white/45">{client.recommended_vault_path}</td>
+                <td className="px-3 py-3">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onRotate(client)}
+                      disabled={client.revoked}
+                      className="h-8 gap-1 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
+                    >
+                      <RotateCw className="h-3 w-3" />
+                      Rotate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onRevoke(client)}
+                      disabled={client.revoked}
+                      className="h-8 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
+                    >
+                      Revoke
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {clients.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-3 py-10 text-center font-mono text-xs uppercase text-white/35"
                 >
-                  <span className="truncate">{client.client_id}</span>
-                  <Copy className="h-3 w-3 shrink-0" />
-                </button>
-                {client.revoked && <span className="ml-2 text-red-300">[revoked]</span>}
-              </td>
-              <td className="px-3 py-3 text-white/60">
-                {client.resource_server_id}
-                <span className="ml-2 text-white/35">[{client.stage}]</span>
-              </td>
-              <td className="px-3 py-3 text-white/60">{client.scopes.join(", ")}</td>
-              <td className="px-3 py-3 text-white/45">{client.recommended_vault_path}</td>
-              <td className="px-3 py-3">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onRotate(client)}
-                    disabled={client.revoked}
-                    className="h-8 gap-1 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
-                  >
-                    <RotateCw className="h-3 w-3" />
-                    Rotate
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onRevoke(client)}
-                    disabled={client.revoked}
-                    className="h-8 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
-                  >
-                    Revoke
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-          {clients.length === 0 && (
-            <tr>
-              <td colSpan={5} className="px-3 py-10 text-center font-mono text-xs uppercase text-white/35">
-                No client credentials
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                  No client credentials
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
