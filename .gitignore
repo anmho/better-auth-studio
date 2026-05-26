@@ -1,4 +1,5 @@
 node_modules
+.wrangler
 .env
 env.prod
 .env.local
@@ -9,3 +10,4 @@ env.prod
 
 # cookies
 cookies.txt
+public/_worker.js
