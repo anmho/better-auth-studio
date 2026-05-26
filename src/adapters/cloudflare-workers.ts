@@ -1,5 +1,5 @@
 import type { StudioConfig } from "../types/handler.js";
-import { injectStudioConfig } from "../utils/html-injector.js";
+import { injectStudioConfig } from "../utils/cloudflare-html-injector.js";
 
 export type CloudflareAssetsBinding = {
   fetch(request: Request): Promise<Response>;
