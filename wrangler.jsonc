@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "auth-studio",
+  "pages_build_output_dir": "./public",
+  "compatibility_date": "2026-05-26",
+  "vars": {
+    "AUTH_INTERNAL_BASE_URL": "https://auth.anmho.com/internal",
+    "STUDIO_ALLOWED_HOST": "auth-studio.anmho.com"
+  }
+}

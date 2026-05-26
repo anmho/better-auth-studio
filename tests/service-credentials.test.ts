@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { handleStudioApiRequest } from "../src/routes";
+import { buildTargetUrl } from "../src/cloudflare/worker";
 
 describe("service credentials routes", () => {
   it("proxies service credential requests through the configured handler", async () => {
@@ -64,5 +65,16 @@ describe("service credentials routes", () => {
 
     expect(response.status).toBe(404);
     expect(response.data.error).toBe("service_credentials_not_enabled");
+  });
+
+  it("preserves the internal base path when building authctl target URLs", () => {
+    expect(
+      String(
+        buildTargetUrl(
+          "https://auth.anmho.com/internal",
+          "/resource-servers?include_disabled=true",
+        ),
+      ),
+    ).toBe("https://auth.anmho.com/internal/resource-servers?include_disabled=true");
   });
 });
