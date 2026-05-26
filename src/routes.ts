@@ -8340,6 +8340,32 @@ export async function handleStudioApiRequest(ctx: {
   data: any;
   cookies?: Array<{ name: string; value: string; options: any }>;
 }> {
+  if (ctx.path === "/api/service-credentials" || ctx.path.startsWith("/api/service-credentials/")) {
+    const serviceCredentials = ctx.studioConfig?.serviceCredentials;
+    if (!serviceCredentials || serviceCredentials.enabled === false) {
+      return {
+        status: 404,
+        data: { error: "service_credentials_not_enabled" },
+      };
+    }
+
+    const [pathWithPrefix, queryString] = ctx.path.split("?");
+    const strippedPath = pathWithPrefix.slice("/api/service-credentials".length) || "/";
+    const path = strippedPath + (queryString ? `?${queryString}` : "");
+    const response = await serviceCredentials.request({
+      path,
+      method: ctx.method,
+      headers: ctx.headers,
+      ip: ctx.ip,
+      body: ctx.body,
+    });
+
+    return {
+      status: response.status,
+      data: response.body ?? null,
+    };
+  }
+
   let preloadedAdapter: any = null;
   if (ctx.auth) {
     try {
