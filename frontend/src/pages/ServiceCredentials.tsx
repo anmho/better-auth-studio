@@ -1,6 +1,8 @@
 import {
   Ban,
   Copy,
+  Eye,
+  EyeOff,
   KeyRound,
   Loader,
   Plus,
@@ -103,6 +105,7 @@ export default function ServiceCredentials() {
   const [resourceServers, setResourceServers] = useState<ResourceServer[]>([]);
   const [clients, setClients] = useState<OAuthClient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showInactive, setShowInactive] = useState(false);
   const [savingResource, setSavingResource] = useState(false);
   const [savingClient, setSavingClient] = useState(false);
   const [secretResult, setSecretResult] = useState<SecretResult | null>(null);
@@ -125,6 +128,19 @@ export default function ServiceCredentials() {
     if (!secretResult?.client_secret || !secretResult.recommended_vault_path) return "";
     return `vault kv put secret/${secretResult.recommended_vault_path} CLIENT_ID=${secretResult.client_id} CLIENT_SECRET=${secretResult.client_secret}`;
   }, [secretResult]);
+
+  const visibleResourceServers = useMemo(
+    () => (showInactive ? resourceServers : resourceServers.filter((server) => !server.disabled)),
+    [resourceServers, showInactive],
+  );
+
+  const visibleClients = useMemo(
+    () => (showInactive ? clients : clients.filter((client) => !client.revoked)),
+    [clients, showInactive],
+  );
+
+  const inactiveResourceServerCount = resourceServers.filter((server) => server.disabled).length;
+  const revokedClientCount = clients.filter((client) => client.revoked).length;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -431,7 +447,10 @@ export default function ServiceCredentials() {
               </Button>
             </FormPanel>
             <ResourceServersTable
-              resourceServers={resourceServers}
+              resourceServers={visibleResourceServers}
+              inactiveCount={inactiveResourceServerCount}
+              showInactive={showInactive}
+              onToggleInactive={() => setShowInactive((value) => !value)}
               onEdit={(server) =>
                 setResourceForm({
                   resource_server_id: server.resource_server_id,
@@ -518,7 +537,14 @@ export default function ServiceCredentials() {
                 Create Client
               </Button>
             </FormPanel>
-            <ClientsTable clients={clients} onRotate={rotateClient} onRevoke={revokeClient} />
+            <ClientsTable
+              clients={visibleClients}
+              inactiveCount={revokedClientCount}
+              showInactive={showInactive}
+              onToggleInactive={() => setShowInactive((value) => !value)}
+              onRotate={rotateClient}
+              onRevoke={revokeClient}
+            />
           </div>
         )}
       </div>
@@ -617,15 +643,27 @@ function StageField({ value, onChange }: { value: Stage; onChange: (stage: Stage
 
 function ResourceServersTable({
   resourceServers,
+  inactiveCount,
   onEdit,
   onDisable,
+  onToggleInactive,
+  showInactive,
 }: {
   resourceServers: ResourceServer[];
+  inactiveCount: number;
   onEdit: (server: ResourceServer) => void;
   onDisable: (server: ResourceServer) => void;
+  onToggleInactive: () => void;
+  showInactive: boolean;
 }) {
   return (
     <div className="overflow-hidden rounded-none border border-dashed border-white/20 bg-black/30">
+      <TableToolbar
+        inactiveCount={inactiveCount}
+        label={showInactive ? "Hide disabled" : "Show disabled"}
+        showInactive={showInactive}
+        onToggleInactive={onToggleInactive}
+      />
       <div className="overflow-x-auto overflow-y-hidden">
         <table className="w-full min-w-[760px] text-left">
           <thead>
@@ -712,15 +750,27 @@ function ResourceServersTable({
 
 function ClientsTable({
   clients,
+  inactiveCount,
+  onToggleInactive,
   onRotate,
   onRevoke,
+  showInactive,
 }: {
   clients: OAuthClient[];
+  inactiveCount: number;
+  onToggleInactive: () => void;
   onRotate: (client: OAuthClient) => void;
   onRevoke: (client: OAuthClient) => void;
+  showInactive: boolean;
 }) {
   return (
     <div className="overflow-hidden rounded-none border border-dashed border-white/20 bg-black/30">
+      <TableToolbar
+        inactiveCount={inactiveCount}
+        label={showInactive ? "Hide revoked" : "Show revoked"}
+        showInactive={showInactive}
+        onToggleInactive={onToggleInactive}
+      />
       <div className="overflow-x-auto overflow-y-hidden">
         <table className="w-full min-w-[900px] text-left">
           <thead>
@@ -810,6 +860,39 @@ function ClientsTable({
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function TableToolbar({
+  inactiveCount,
+  label,
+  onToggleInactive,
+  showInactive,
+}: {
+  inactiveCount: number;
+  label: string;
+  onToggleInactive: () => void;
+  showInactive: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-3 border-b border-dashed border-white/10 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="font-mono text-[10px] uppercase text-white/35">
+        {showInactive
+          ? `${inactiveCount} inactive visible`
+          : inactiveCount > 0
+            ? `${inactiveCount} inactive hidden`
+            : "No inactive records"}
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={onToggleInactive}
+        className="h-8 rounded-none border-dashed px-2 font-mono text-[10px] uppercase"
+      >
+        {showInactive ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+        {label}
+      </Button>
     </div>
   );
 }
