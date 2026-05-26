@@ -3,6 +3,7 @@ import {
   Building2,
   Database,
   LayoutDashboard,
+  KeyRound,
   LogOut,
   Mail,
   Menu,
@@ -26,6 +27,7 @@ import { useCounts } from "../contexts/CountsContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { buildApiUrl } from "../utils/api";
+import { isStudioFeatureEnabled, type StudioFeatureKey } from "../utils/features";
 import { fetchStudioAuthJson } from "../utils/studio-auth";
 import CommandPalette from "./CommandPalette";
 import { LiveEventMarquee } from "./LiveEventMarquee";
@@ -44,12 +46,21 @@ function getStudioConfig() {
 
 function checkIsSelfHosted(): boolean {
   const cfg = getStudioConfig();
-  return !!cfg.basePath;
+  return !!cfg.basePath && cfg.authMode !== "access";
 }
 
 interface LayoutProps {
   children: ReactNode;
 }
+
+type NavigationItem = {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  feature: StudioFeatureKey;
+  badge?: string;
+  disabled?: boolean;
+};
 
 type WatchIndicatorStatus =
   | "connecting"
@@ -252,6 +263,11 @@ export default function Layout({ children }: LayoutProps) {
     };
 
     const fetchSchemaCount = async () => {
+      if (!isStudioFeatureEnabled("database")) {
+        setSchemaCount(null);
+        return;
+      }
+
       try {
         const response = await fetch("/api/database/schema");
         const data = await response.json();
@@ -391,7 +407,7 @@ export default function Layout({ children }: LayoutProps) {
 
   useEffect(() => {
     const checkEventsStatus = async () => {
-      if (!isSelfHosted) {
+      if (!isSelfHosted || !isStudioFeatureEnabled("events")) {
         setEventsEnabled(false);
         return;
       }
@@ -409,48 +425,89 @@ export default function Layout({ children }: LayoutProps) {
     checkEventsStatus();
   }, [isSelfHosted]);
 
-  const navigation = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    {
+  const withFeatureState = (item: Omit<NavigationItem, "disabled">): NavigationItem => ({
+    ...item,
+    disabled: !isStudioFeatureEnabled(item.feature),
+  });
+
+  const navigation: NavigationItem[] = [
+    withFeatureState({
+      name: "Dashboard",
+      href: "/",
+      icon: LayoutDashboard,
+      feature: "dashboard",
+    }),
+    withFeatureState({
       name: "Users",
       href: "/users",
       icon: Users,
-      badge: loading ? "..." : formatCount(counts.users),
-    },
-    {
+      feature: "users",
+      badge: isStudioFeatureEnabled("users") ? (loading ? "..." : formatCount(counts.users)) : undefined,
+    }),
+    withFeatureState({
       name: "Organizations",
       href: "/organizations",
       icon: Building2,
-      badge: loading ? "..." : formatCount(counts.organizations),
-    },
-    ...(eventsEnabled === true
+      feature: "organizations",
+      badge: isStudioFeatureEnabled("organizations")
+        ? loading
+          ? "..."
+          : formatCount(counts.organizations)
+        : undefined,
+    }),
+    ...(eventsEnabled === true && isStudioFeatureEnabled("events")
       ? [
-          {
+          withFeatureState({
             name: "Events",
             href: "/events",
             icon: Activity,
-          },
+            feature: "events",
+          }),
         ]
       : []),
-    {
+    withFeatureState({
       name: "Database",
       href: "/database",
       icon: Database,
-      badge: schemaCount !== null ? formatCount(schemaCount) : undefined,
-    },
-    {
+      feature: "database",
+      badge: isStudioFeatureEnabled("database")
+        ? schemaCount !== null
+          ? formatCount(schemaCount)
+          : undefined
+        : undefined,
+    }),
+    withFeatureState({
       name: "Emails",
       href: "/emails",
       icon: Mail,
-      badge: formatCount(EMAIL_TEMPLATES_COUNT),
-    },
-    {
+      feature: "emails",
+      badge: isStudioFeatureEnabled("emails") ? formatCount(EMAIL_TEMPLATES_COUNT) : undefined,
+    }),
+    withFeatureState({
       name: "Tools",
       href: "/tools",
       icon: Wrench,
-      badge: formatCount(getVisibleToolsCount(getStudioConfig())),
-    },
-    { name: "Settings", href: "/settings", icon: Settings },
+      feature: "tools",
+      badge: isStudioFeatureEnabled("tools")
+        ? formatCount(getVisibleToolsCount(getStudioConfig()))
+        : undefined,
+    }),
+    ...(getStudioConfig()?.serviceCredentials?.enabled
+      ? [
+          withFeatureState({
+            name: "Service Credentials",
+            href: "/service-credentials",
+            icon: KeyRound,
+            feature: "serviceCredentials",
+          }),
+        ]
+      : []),
+    withFeatureState({
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+      feature: "settings",
+    }),
   ];
 
   const config = getStudioConfig();
@@ -746,10 +803,39 @@ export default function Layout({ children }: LayoutProps) {
           <nav className="flex flex-col">
             {navigation.map((item) => {
               const isActive =
-                item.href === "/"
+                !item.disabled && item.href === "/"
                   ? location.pathname === "/"
-                  : location.pathname === item.href ||
-                    location.pathname.startsWith(item.href + "/");
+                  : !item.disabled &&
+                    (location.pathname === item.href ||
+                      location.pathname.startsWith(item.href + "/"));
+              const itemContent = (
+                <>
+                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-mono uppercase font-light text-xs">{item.name}</span>
+                  {item.badge && (
+                    <span className="text-xs text-gray-500 ml-auto">
+                      <span className="mr-0.5">[</span>
+                      <span className="text-white/50 lowercase font-mono text-xs">
+                        {item.badge}
+                      </span>
+                      <span className="ml-0.5">]</span>
+                    </span>
+                  )}
+                </>
+              );
+
+              if (item.disabled) {
+                return (
+                  <div
+                    key={item.name}
+                    aria-disabled="true"
+                    className="flex cursor-not-allowed items-center space-x-3 border-b border-white/5 px-4 py-3 text-sm font-medium text-gray-600 opacity-55 grayscale"
+                  >
+                    {itemContent}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.name}
@@ -761,17 +847,7 @@ export default function Layout({ children }: LayoutProps) {
                       : "text-gray-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <item.icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="font-mono uppercase font-light text-xs">{item.name}</span>
-                  {item.badge && (
-                    <span className="text-xs text-gray-500 ml-auto">
-                      <span className="mr-0.5">[</span>
-                      <span className="text-white/80 lowercase font-mono text-xs">
-                        {item.badge}
-                      </span>
-                      <span className="ml-0.5">]</span>
-                    </span>
-                  )}
+                  {itemContent}
                 </Link>
               );
             })}
@@ -817,37 +893,57 @@ export default function Layout({ children }: LayoutProps) {
           <nav className="flex overflow-y-hidden overflow-x-auto">
             {navigation.map((item, index) => {
               const isActive =
-                item.href === "/"
+                !item.disabled && item.href === "/"
                   ? location.pathname === "/"
-                  : location.pathname === item.href ||
-                    location.pathname.startsWith(item.href + "/");
+                  : !item.disabled &&
+                    (location.pathname === item.href ||
+                      location.pathname.startsWith(item.href + "/"));
+              const itemContent = (
+                <>
+                  <item.icon className="w-4 h-4" />
+                  <span className="inline-flex font-mono uppercase border-x-0 font-light text-xs items-start">
+                    {item.name}
+                    {item.badge && (
+                      <sup className="text-xs text-gray-500 ml-1">
+                        <span className="mr-0.5">[</span>
+                        <span
+                          className={`lowercase font-mono text-xs ${
+                            item.disabled ? "text-white/40" : "text-white/80"
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                        <span className="ml-0.5">]</span>
+                      </sup>
+                    )}
+                  </span>
+                </>
+              );
+
               return (
                 <div key={item.name} className="flex items-center">
                   {index === 0 && (
                     <div className="h-[50px] -my-5 w-px bg-transparent border-dashed border-r border-white/20" />
                   )}
-                  <Link
-                    to={item.href}
-                    className={`flex items-center space-x-2 border-x-0 px-8 py-4 text-sm font-medium border-b-2 transition-all duration-200 relative ${
-                      isActive
-                        ? "border-white text-white"
-                        : "border-transparent text-gray-400 hover:text-white hover:border-gray-500/50"
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="inline-flex font-mono uppercase border-x-0 font-light text-xs items-start">
-                      {item.name}
-                      {item.badge && (
-                        <sup className="text-xs text-gray-500 ml-1">
-                          <span className="mr-0.5">[</span>
-                          <span className="text-white/80 lowercase font-mono text-xs">
-                            {item.badge}
-                          </span>
-                          <span className="ml-0.5">]</span>
-                        </sup>
-                      )}
-                    </span>
-                  </Link>
+                  {item.disabled ? (
+                    <div
+                      aria-disabled="true"
+                      className="relative flex cursor-not-allowed items-center space-x-2 border-x-0 border-b-2 border-transparent px-8 py-4 text-sm font-medium text-gray-600 opacity-55 grayscale"
+                    >
+                      {itemContent}
+                    </div>
+                  ) : (
+                    <Link
+                      to={item.href}
+                      className={`flex items-center space-x-2 border-x-0 px-8 py-4 text-sm font-medium border-b-2 transition-all duration-200 relative ${
+                        isActive
+                          ? "border-white text-white"
+                          : "border-transparent text-gray-400 hover:text-white hover:border-gray-500/50"
+                      }`}
+                    >
+                      {itemContent}
+                    </Link>
+                  )}
                   {index <= navigation.length - 1 && (
                     <div className="h-[50px] -my-5 w-px bg-transparent border-dashed border-r border-white/20" />
                   )}

@@ -16,21 +16,29 @@ import Login from "./pages/Login";
 import OrganizationDetails from "./pages/OrganizationDetails";
 import Organizations from "./pages/Organizations";
 import Sessions from "./pages/Sessions";
+import ServiceCredentials from "./pages/ServiceCredentials";
 import Settings from "./pages/Settings";
 import TeamDetails from "./pages/TeamDetails";
 import Teams from "./pages/Teams";
+import UnavailableFeature from "./pages/UnavailableFeature";
 import Tools from "./pages/Tools";
 import UserDetails from "./pages/UserDetails";
 import Users from "./pages/Users";
+import { isStudioFeatureEnabled, type StudioFeatureKey } from "./utils/features";
 
 const config = (window as any).__STUDIO_CONFIG__;
 const basePath = config?.basePath !== undefined ? config.basePath : "";
 const isSelfHosted = !!basePath;
+const usesStudioAuth = config?.authMode !== "access";
 
 interface AuthState {
   loading: boolean;
   authenticated: boolean;
   user: any;
+}
+
+function featureElement(feature: StudioFeatureKey, name: string, element: React.ReactNode) {
+  return isStudioFeatureEnabled(feature) ? element : <UnavailableFeature name={name} />;
 }
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -73,25 +81,45 @@ function MainRoutes() {
           <Route
             path="/"
             element={
-              <DashboardWidgetsProvider>
-                <Dashboard />
-              </DashboardWidgetsProvider>
+              isStudioFeatureEnabled("dashboard") ? (
+                <DashboardWidgetsProvider>
+                  <Dashboard />
+                </DashboardWidgetsProvider>
+              ) : (
+                <Navigate to="/service-credentials" replace />
+              )
             }
           />
-          <Route path="/users" element={<Users />} />
-          <Route path="/users/:userId" element={<UserDetails />} />
-          <Route path="/organizations" element={<Organizations />} />
-          <Route path="/organizations/:orgId" element={<OrganizationDetails />} />
-          <Route path="/teams" element={<Teams />} />
-          <Route path="/teams/:teamId" element={<TeamDetails />} />
+          <Route path="/users" element={featureElement("users", "Users", <Users />)} />
+          <Route path="/users/:userId" element={featureElement("users", "Users", <UserDetails />)} />
+          <Route
+            path="/organizations"
+            element={featureElement("organizations", "Organizations", <Organizations />)}
+          />
+          <Route
+            path="/organizations/:orgId"
+            element={featureElement("organizations", "Organizations", <OrganizationDetails />)}
+          />
+          <Route path="/teams" element={featureElement("teams", "Teams", <Teams />)} />
+          <Route path="/teams/:teamId" element={featureElement("teams", "Teams", <TeamDetails />)} />
           <Route path="/organizations/:orgId/teams/:teamId" element={<TeamDetails />} />
-          <Route path="/sessions" element={<Sessions />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/database" element={<DatabaseVisualizer />} />
-          <Route path="/database/demo" element={<DatabaseSchemaNodeDemo />} />
-          <Route path="/emails" element={<EmailEditor />} />
-          <Route path="/tools" element={<Tools />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/sessions" element={featureElement("sessions", "Sessions", <Sessions />)} />
+          <Route path="/events" element={featureElement("events", "Events", <Events />)} />
+          <Route
+            path="/database"
+            element={featureElement("database", "Database", <DatabaseVisualizer />)}
+          />
+          <Route
+            path="/database/demo"
+            element={featureElement("database", "Database", <DatabaseSchemaNodeDemo />)}
+          />
+          <Route path="/emails" element={featureElement("emails", "Emails", <EmailEditor />)} />
+          <Route path="/tools" element={featureElement("tools", "Tools", <Tools />)} />
+          <Route
+            path="/service-credentials"
+            element={featureElement("serviceCredentials", "Service Credentials", <ServiceCredentials />)}
+          />
+          <Route path="/settings" element={featureElement("settings", "Settings", <Settings />)} />
         </Routes>
       </Layout>
     </CountsProvider>
@@ -110,7 +138,7 @@ function AppShell() {
 
   return (
     <Router basename={basePath}>
-      {isSelfHosted ? (
+      {isSelfHosted && usesStudioAuth ? (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/access-denied" element={<AccessDenied />} />
