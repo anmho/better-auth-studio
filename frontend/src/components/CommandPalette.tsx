@@ -28,6 +28,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
+import { isStudioFeatureEnabled, type StudioFeatureKey } from "../utils/features";
 
 interface CommandItem {
   id: string;
@@ -70,6 +71,9 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
     return plugins.plugins.some((p: any) => p.id === pluginName);
   };
 
+  const featureDisabled = (feature: StudioFeatureKey) => !isStudioFeatureEnabled(feature);
+  const featureDisabledMessage = "Not enabled in this deployment";
+
   const commands: CommandItem[] = [
     // ─── Navigation ───
     {
@@ -80,6 +84,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/"),
       category: "Navigation",
       keywords: ["overview", "stats", "home", "analytics"],
+      disabled: featureDisabled("dashboard"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "users",
@@ -89,6 +95,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/users"),
       category: "Navigation",
       keywords: ["user", "account", "profile", "members"],
+      disabled: featureDisabled("users"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "organizations",
@@ -99,8 +107,10 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       category: "Navigation",
       keywords: ["org", "company", "team", "workspace"],
       requiresPlugin: "organization",
-      disabled: !isPluginEnabled("organization"),
-      disabledMessage: "Enable organization plugin in settings",
+      disabled: featureDisabled("organizations") || !isPluginEnabled("organization"),
+      disabledMessage: featureDisabled("organizations")
+        ? featureDisabledMessage
+        : "Enable organization plugin in settings",
     },
     {
       id: "sessions",
@@ -110,6 +120,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/sessions"),
       category: "Navigation",
       keywords: ["session", "login", "active", "token"],
+      disabled: featureDisabled("sessions"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "emails",
@@ -119,6 +131,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/emails"),
       category: "Navigation",
       keywords: ["email", "template", "notification", "message"],
+      disabled: featureDisabled("emails"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "tools",
@@ -128,6 +142,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/tools"),
       category: "Navigation",
       keywords: ["utilities", "tools", "helpers"],
+      disabled: featureDisabled("tools"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "database",
@@ -137,6 +153,19 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/database"),
       category: "Navigation",
       keywords: ["database", "schema", "tables", "models"],
+      disabled: featureDisabled("database"),
+      disabledMessage: featureDisabledMessage,
+    },
+    {
+      id: "service-credentials",
+      title: "Service Credentials",
+      description: "Manage resource servers and client credentials",
+      icon: Key,
+      action: () => navigate("/service-credentials"),
+      category: "Navigation",
+      keywords: ["service", "credentials", "oauth", "clients", "m2m"],
+      disabled: featureDisabled("serviceCredentials"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "settings",
@@ -146,6 +175,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/settings"),
       category: "Navigation",
       keywords: ["config", "setup", "preferences", "configuration"],
+      disabled: featureDisabled("settings"),
+      disabledMessage: featureDisabledMessage,
     },
 
     // ─── Actions ───
@@ -157,6 +188,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/users", { state: { openModal: "create" } }),
       category: "Actions",
       keywords: ["add", "new", "register", "signup", "user"],
+      disabled: featureDisabled("users"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "create-organization",
@@ -167,8 +200,10 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       category: "Actions",
       keywords: ["add", "new", "org", "organization", "workspace"],
       requiresPlugin: "organization",
-      disabled: !isPluginEnabled("organization"),
-      disabledMessage: "Enable organization plugin in settings",
+      disabled: featureDisabled("organizations") || !isPluginEnabled("organization"),
+      disabledMessage: featureDisabled("organizations")
+        ? featureDisabledMessage
+        : "Enable organization plugin in settings",
     },
     // {
     //   id: "create-session",
@@ -187,6 +222,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/users", { state: { openModal: "seed" } }),
       category: "Actions",
       keywords: ["seed", "generate", "test", "sample", "fake", "dummy"],
+      disabled: featureDisabled("users"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "seed-organizations",
@@ -197,8 +234,10 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       category: "Actions",
       keywords: ["seed", "generate", "test", "sample", "fake", "dummy", "org"],
       requiresPlugin: "organization",
-      disabled: !isPluginEnabled("organization"),
-      disabledMessage: "Enable organization plugin in settings",
+      disabled: featureDisabled("organizations") || !isPluginEnabled("organization"),
+      disabledMessage: featureDisabled("organizations")
+        ? featureDisabledMessage
+        : "Enable organization plugin in settings",
     },
     {
       id: "seed-sessions",
@@ -208,6 +247,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/sessions", { state: { openModal: "seed" } }),
       category: "Actions",
       keywords: ["seed", "generate", "test", "sample", "fake", "dummy", "session"],
+      disabled: featureDisabled("sessions"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "export-analytics",
@@ -217,6 +258,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => onAction?.("exportAnalytics"),
       category: "Actions",
       keywords: ["export", "share", "analytics", "screenshot", "image", "png"],
+      disabled: featureDisabled("dashboard"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "refresh-studio",
@@ -248,6 +291,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/tools", { state: { openTool: "oauth" } }),
       category: "Tools",
       keywords: ["oauth", "provider", "google", "github", "social", "login"],
+      disabled: featureDisabled("tools"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "tool-jwt",
@@ -257,6 +302,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/tools", { state: { openTool: "jwt" } }),
       category: "Tools",
       keywords: ["jwt", "token", "decode", "inspect", "bearer"],
+      disabled: featureDisabled("tools"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "tool-password",
@@ -266,6 +313,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/tools", { state: { openTool: "password" } }),
       category: "Tools",
       keywords: ["password", "strength", "security", "hash"],
+      disabled: featureDisabled("tools"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "tool-secret",
@@ -275,6 +324,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/tools", { state: { openTool: "secret" } }),
       category: "Tools",
       keywords: ["secret", "generate", "random", "key", "token"],
+      disabled: featureDisabled("tools"),
+      disabledMessage: featureDisabledMessage,
     },
     {
       id: "tool-export",
@@ -284,6 +335,8 @@ export default function CommandPalette({ isOpen, onClose, onAction }: CommandPal
       action: () => navigate("/tools", { state: { openTool: "export" } }),
       category: "Tools",
       keywords: ["export", "download", "json", "csv", "data", "backup"],
+      disabled: featureDisabled("tools"),
+      disabledMessage: featureDisabledMessage,
     },
 
     // ─── Links ───
