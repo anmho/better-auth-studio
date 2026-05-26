@@ -130,6 +130,7 @@ export async function handleStudioRequest(
 ): Promise<UniversalResponse> {
   try {
     const isSelfHosted = !!config.basePath;
+    const usesStudioSession = config.authMode !== "access";
     const basePath = config.basePath || "";
 
     let path = request.url;
@@ -195,7 +196,7 @@ export async function handleStudioRequest(
     }
 
     if (path.startsWith("/api/")) {
-      if (isSelfHosted && isProtectedApiPath(path)) {
+      if (isSelfHosted && usesStudioSession && isProtectedApiPath(path)) {
         const sessionResult = verifyStudioSession(request, config);
         if (!sessionResult.valid) {
           return jsonResponse(401, { error: "Unauthorized", message: sessionResult.error });
@@ -206,7 +207,7 @@ export async function handleStudioRequest(
 
     if (isSelfHosted && (path === "/auth" || path.startsWith("/auth/"))) {
       const apiPath = "/api" + path;
-      if (isProtectedApiPath(apiPath)) {
+      if (usesStudioSession && isProtectedApiPath(apiPath)) {
         const sessionResult = verifyStudioSession(request, config);
         if (!sessionResult.valid) {
           return jsonResponse(401, { error: "Unauthorized", message: sessionResult.error });
@@ -224,7 +225,7 @@ export async function handleStudioRequest(
 
       if (wantsJson) {
         const apiPath = "/api" + path;
-        if (isProtectedApiPath(apiPath)) {
+        if (usesStudioSession && isProtectedApiPath(apiPath)) {
           const sessionResult = verifyStudioSession(request, config);
           if (!sessionResult.valid) {
             return jsonResponse(401, { error: "Unauthorized", message: sessionResult.error });

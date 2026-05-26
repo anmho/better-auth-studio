@@ -12,6 +12,9 @@ export type { AuthEvent, AuthEventType, EventIngestionProvider } from "./types/e
 export { EVENT_TEMPLATES, getEventSeverity } from "./types/events.js";
 export type {
   StudioConfig,
+  ServiceCredentialsRequestHandler,
+  ServiceCredentialsProxyRequest,
+  ServiceCredentialsProxyResponse,
   StudioLastSeenAtConfig,
   StudioMetadata,
   StudioToolId,

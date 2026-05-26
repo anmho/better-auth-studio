@@ -16,6 +16,7 @@ export interface StudioMetadata {
 
 export interface StudioConfig {
   basePath?: string;
+  authMode?: "studio" | "access";
   metadata?: StudioMetadata;
   auth?: any;
   access?: StudioAccessConfig;
@@ -74,17 +75,24 @@ export interface LastSeenAtConfig {
 
 export interface WindowStudioConfig {
   basePath: string;
+  authMode?: "studio" | "access";
   metadata: Required<StudioMetadata>;
+  features?: Partial<Record<string, boolean>>;
   liveMarquee?: LiveMarqueeConfig;
   lastSeenAt?: LastSeenAtConfig;
   /** Tool ids to exclude from the Tools page (from self-host config). */
   tools?: { exclude?: string[] };
+  serviceCredentials?: { enabled: boolean };
 }
 
 export function serveIndexHtml(publicDir: string, config: Partial<StudioConfig> = {}): string {
   const indexPath = join(publicDir, "index.html");
   let html = readFileSync(indexPath, "utf-8");
 
+  return injectStudioConfig(html, config);
+}
+
+export function injectStudioConfig(html: string, config: Partial<StudioConfig> = {}): string {
   const frontendConfig = prepareFrontendConfig(config);
 
   html = injectConfig(html, frontendConfig);
@@ -134,10 +142,15 @@ function prepareFrontendConfig(config: Partial<StudioConfig>): WindowStudioConfi
 
   const lastSeenAt = (config as any).lastSeenAt;
   const toolsConfig = (config as any).tools;
+  const serviceCredentialsConfig = (config as any).serviceCredentials;
+  const featuresConfig = (config as any).features;
 
   return {
     basePath: config.basePath || "",
+    authMode: config.authMode,
     metadata: mergedMetadata,
+    features:
+      featuresConfig && typeof featuresConfig === "object" ? { ...featuresConfig } : undefined,
     liveMarquee: liveMarquee,
     lastSeenAt:
       lastSeenAt && typeof lastSeenAt === "object"
@@ -147,6 +160,9 @@ function prepareFrontendConfig(config: Partial<StudioConfig>): WindowStudioConfi
       toolsConfig && Array.isArray(toolsConfig.exclude) && toolsConfig.exclude.length > 0
         ? { exclude: toolsConfig.exclude }
         : undefined,
+    serviceCredentials: serviceCredentialsConfig
+      ? { enabled: serviceCredentialsConfig.enabled !== false }
+      : undefined,
   };
 }
 
