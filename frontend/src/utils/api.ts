@@ -2,7 +2,8 @@
  * Get the base path from the studio config
  */
 export function getBasePath(): string {
-  return (window as any).__STUDIO_CONFIG__?.basePath || "/api/studio";
+  const config = (window as any).__STUDIO_CONFIG__;
+  return config && "basePath" in config ? config.basePath || "" : "/api/studio";
 }
 
 /**
