@@ -110,6 +110,7 @@ export async function initializeEventIngestionAndHooks(config) {
 export async function handleStudioRequest(request, config) {
     try {
         const isSelfHosted = !!config.basePath;
+        const usesStudioSession = config.authMode !== "access";
         const basePath = config.basePath || "";
         let path = request.url;
         const [pathname, queryString] = path.split("?");
@@ -165,7 +166,7 @@ export async function handleStudioRequest(request, config) {
             return handleStaticFile(path, config);
         }
         if (path.startsWith("/api/")) {
-            if (isSelfHosted && isProtectedApiPath(path)) {
+            if (isSelfHosted && usesStudioSession && isProtectedApiPath(path)) {
                 const sessionResult = verifyStudioSession(request, config);
                 if (!sessionResult.valid) {
                     return jsonResponse(401, { error: "Unauthorized", message: sessionResult.error });
@@ -175,7 +176,7 @@ export async function handleStudioRequest(request, config) {
         }
         if (isSelfHosted && (path === "/auth" || path.startsWith("/auth/"))) {
             const apiPath = "/api" + path;
-            if (isProtectedApiPath(apiPath)) {
+            if (usesStudioSession && isProtectedApiPath(apiPath)) {
                 const sessionResult = verifyStudioSession(request, config);
                 if (!sessionResult.valid) {
                     return jsonResponse(401, { error: "Unauthorized", message: sessionResult.error });
@@ -190,7 +191,7 @@ export async function handleStudioRequest(request, config) {
                 !acceptHeader.includes("text/html");
             if (wantsJson) {
                 const apiPath = "/api" + path;
-                if (isProtectedApiPath(apiPath)) {
+                if (usesStudioSession && isProtectedApiPath(apiPath)) {
                     const sessionResult = verifyStudioSession(request, config);
                     if (!sessionResult.valid) {
                         return jsonResponse(401, { error: "Unauthorized", message: sessionResult.error });
