@@ -2,3 +2,38 @@ packages:
   - "frontend/**"
   - "docs/**"
   - "src/**"
+
+allowBuilds:
+  esbuild: set this to true or false
+  sharp: set this to true or false
+  workerd: set this to true or false
+
+overrides:
+  "@remix-run/router": ">=1.23.2"
+  "@sveltejs/kit": ">=2.49.5"
+  "better-auth": ">=1.6.16"
+  "brace-expansion": ">=2.0.3"
+  "devalue": ">=5.6.2"
+  "defu": ">=6.1.7"
+  "ajv": ">=6.14.0"
+  "file-type": "22.0.1"
+  "flatted": ">=3.4.2"
+  "hono": ">=4.12.25"
+  "kysely": ">=0.28.17"
+  "lodash": ">=4.17.23"
+  "lodash-es": ">=4.18.1"
+  "minimatch": ">=9.0.6"
+  "next": ">=16.2.9"
+  "path-to-regexp": ">=0.1.13"
+  "picomatch": ">=4.0.4"
+  "postcss": ">=8.5.15"
+  "prismjs": ">=1.30.0"
+  "qs": ">=6.15.2"
+  "rollup": ">=4.59.0"
+  "seroval": ">=1.4.1"
+  "svelte": ">=5.55.7"
+  "tar": ">=7.5.11"
+  "vite": ">=7.1.11"
+  "vitest": ">=3.2.6"
+  "ws": ">=8.21.0"
+  "yaml": ">=2.9.0"

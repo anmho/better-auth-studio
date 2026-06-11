@@ -12,6 +12,7 @@ export interface StudioMetadata {
 }
 export interface StudioConfig {
     basePath?: string;
+    authMode?: "studio" | "access";
     metadata?: StudioMetadata;
     auth?: any;
     access?: StudioAccessConfig;
@@ -49,12 +50,18 @@ export interface LastSeenAtConfig {
 }
 export interface WindowStudioConfig {
     basePath: string;
+    authMode?: "studio" | "access";
     metadata: Required<StudioMetadata>;
+    features?: Partial<Record<string, boolean>>;
     liveMarquee?: LiveMarqueeConfig;
     lastSeenAt?: LastSeenAtConfig;
     /** Tool ids to exclude from the Tools page (from self-host config). */
     tools?: {
         exclude?: string[];
     };
+    serviceCredentials?: {
+        enabled: boolean;
+    };
 }
 export declare function serveIndexHtml(publicDir: string, config?: Partial<StudioConfig>): string;
+export declare function injectStudioConfig(html: string, config?: Partial<StudioConfig>): string;

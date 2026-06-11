@@ -2,7 +2,7 @@ export { handleStudioRequest } from "./core/handler.js";
 export { createClickHouseProvider, createHttpProvider, createNodeSqliteProvider, createPostgresProvider, createSqliteProvider, createStorageProvider, } from "./providers/events/helpers.js";
 export type { AuthEvent, AuthEventType, EventIngestionProvider } from "./types/events.js";
 export { EVENT_TEMPLATES, getEventSeverity } from "./types/events.js";
-export type { StudioConfig, StudioLastSeenAtConfig, StudioMetadata, StudioToolId, WindowStudioConfig, } from "./types/handler.js";
+export type { StudioConfig, ServiceCredentialsRequestHandler, ServiceCredentialsProxyRequest, ServiceCredentialsProxyResponse, StudioLastSeenAtConfig, StudioMetadata, StudioToolId, WindowStudioConfig, } from "./types/handler.js";
 export { defineStudioConfig, STUDIO_TOOL_IDS } from "./types/handler.js";
 export { injectLastSeenAtHooks } from "./utils/hook-injector.js";
 export { checkEventIngestionHealth, emitEvent, getEventIngestionProvider, getEventQueueSize, initializeEventIngestion, isEventIngestionInitialized, shutdownEventIngestion, } from "./utils/event-ingestion.js";
